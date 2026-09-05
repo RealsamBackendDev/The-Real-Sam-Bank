@@ -1,9 +1,10 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { createAccount } = require("../controller/accountController");
-const { protect } = require("../middleware/auth");
+const accountController = require('../controller/accountController');
+const { protect } = require('../middleware/auth');
 
 
-router.post("/create", protect, createAccount);
+router.post('/create', protect, accountController.createNewAccount);
+router.get('/balance/:accountNumber', protect, accountController.getAccountBalance);
 
 module.exports = router;

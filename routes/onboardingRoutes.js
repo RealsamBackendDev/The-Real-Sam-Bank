@@ -1,9 +1,8 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { verifyIdentity } = require("../controller/onboardingController");
-const { protect } = require("../middleware/auth");
+const onboardingController = require('../controller/onboardingController');
 
-
-router.post("/verify_identity", protect, verifyIdentity);
+router.post('/fintech/onboard', onboardingController.onboardFintech);
+router.post('/auth/token', onboardingController.getFintechToken);
 
 module.exports = router;

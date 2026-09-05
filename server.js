@@ -1,41 +1,28 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
+const express = require('express');
+const dotenv = require('dotenv');
+const connectDB = require('./config/databaseConfig');
+const { apiLimiter } = require('./Middleware/rateLimit');
+
 dotenv.config();
-const connectDB = require("./config/databaseConfig"); 
 
 
+connectDB();
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
-
-app.use("/api/v1/auth", require("./routes/authRoute"));
-app.use("/api/v1/onboarding", require("./routes/onboardingRoutes"));
-app.use("/api/v1/account", require("./routes/accountRoute"));
-app.use("/api/v1/transfers", require("./routes/transactionRoute"));
+app.use(apiLimiter);
 
 
+app.use('/api/auth', require('./Routes/AuthRoute'));
+app.use('/api/nibss', require('./Routes/OnboardingRoutes'));
+app.use('/api/identity', require('./Routes/identityRoute'));
+app.use('/api/account', require('./Routes/accountRoute'));
+app.use('/api/transaction', require('./Routes/transactionRoute'));
+app.use('/api/webhook', require('./routes/webhookRoute'));
 
+const PORT = process.env.PORT || 5050;
 
-
-
-
-
-
-const startServer = async () => {
-  try {
-    await connectDB();
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
-
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

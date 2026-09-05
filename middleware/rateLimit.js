@@ -1,19 +1,21 @@
-const rateLimit = require("express-rate-limit");
+const rateLimit = require('express-rate-limit');
 
-
-exports.authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Max 10 attempts per IP
-  message: { error: "Too many login/auth attempts from this IP. Please try again after 15 minutes." },
+// General API Rate Limiter (e.g., 100 requests per 15 minutes)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: "Too many requests from this IP, please try again after 15 minutes" },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
-// Transaction Financial Limiter (Prevents rapid double-submit on transfers, airtime, and data)
-exports.transactionLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute window
-  max: 5, // Max 5 transactions per minute per IP
-  message: { error: "Transaction limit reached. Please wait a minute before making another request." },
+// Strict Limiter for Sensitive Auth Routes (Login, Send OTP)
+const authLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: { message: "Too many authentication attempts, please try again in 10 minutes" },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
+
+module.exports = { apiLimiter, authLimiter };

@@ -1,33 +1,49 @@
-const User = require("../model/userModel");
-const nibssGateway = require("../Gateway/nibssGateway");
+const nibssService = require('../Services/nibssServices');
 
-exports.verifyIdentity = async (req, res) => {
+exports.onboardFintech = async (req, res) => {
   try {
-    const { kycType, kycID } = req.body; 
-    const userId = req.user.id;
+    const { name, email } = req.body;
 
-    let nibssResponse;
-    if (kycType === "BVN") {
-      nibssResponse = await nibssGateway.validateBvn(kycID);
-    } else if (kycType === "NIN") {
-      nibssResponse = await nibssGateway.validateNin(kycID);
-    } else {
-      return res.status(400).json({ error: "Invalid KYC type. Must be BVN or NIN." });
+    if (!name || !email) {
+      return res.status(400).json({ message: "Fintech name and email are required" });
     }
 
-   
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { isIdentityVerified: true, kycType, kycNumber: kycID },
-      { new: true }
-    );
+    // Attempt request to /fintech/onboard
+    const response = await nibssService.post('/fintech/onboard', { name, email });
 
-    res.status(200).json({
-      message: "Identity verified successfully",
-      isIdentityVerified: user.isIdentityVerified,
-      data: nibssResponse
+    res.status(201).json({
+      message: "Fintech onboarded successfully",
+      data: response.data
     });
   } catch (error) {
-    res.status(400).json({ error: error.message || "Identity verification failed" });
+    console.error("NIBSS Target URL:", error.config?.baseURL + error.config?.url);
+    console.error("NIBSS Error Response:", error.response?.data);
+
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message;
+    res.status(status).json({ message: "Fintech onboarding failed", error: message });
+  }
+};
+
+// 2. Authenticate Fintech & Obtain NIBSS JWT Access Token
+exports.getFintechToken = async (req, res) => {
+  try {
+    const { apiKey, apiSecret } = req.body;
+
+    if (!apiKey || !apiSecret) {
+      return res.status(400).json({ message: "apiKey and apiSecret are required" });
+    }
+
+    const response = await nibssService.post('/auth/token', { apiKey, apiSecret });
+
+    res.status(200).json({
+      message: "Authentication successful",
+      token: response.data.token,
+      fintech: response.data.fintech
+    });
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message;
+    res.status(status).json({ message: "Fintech authentication failed", error: message });
   }
 };

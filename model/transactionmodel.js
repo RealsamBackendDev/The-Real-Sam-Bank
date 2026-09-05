@@ -1,45 +1,42 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const transactionSchema = new mongoose.Schema({
-  reference: { 
-    type: String, 
-    required: true, 
-    unique: true 
-},
-  senderAccountId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Account", 
-    required: true 
-},
-  receiverAccountId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Account" 
-},
-  recipientAccountNumber: { 
-    type: String,
-    required: true 
-},
-  recipientBankCode: { 
-    type: String, 
-    required: true 
-},
-  amount: { 
-    type: Number, 
-    required: true 
-},
-  type: { 
-    type: String, 
-    enum: ["INTRA_BANK", "INTER_BANK"], 
-    required: true 
-},
-  status: { 
-    type: String, 
-    enum: ["PENDING", "SUCCESS", "FAILED"], 
-    default: "SUCCESS" 
-},
-  narration: { type: String }
-}, 
+const transactionSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    account_number: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    transaction_id: {
+      type: String,
+      required: true,
+      unique: true
+    },
+    transaction_type: {
+      type: String,
+      enum: ['TRANSFER', 'DEPOSIT'],
+      default: 'TRANSFER'
+    },
+    amount: {
+      type: Number,
+      required: true
+    },
+    to_account: {
+      type: String,
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['SUCCESS', 'FAILED', 'PENDING'],
+      default: 'SUCCESS'
+    }
+  },
+  { timestamps: true }
+);
 
-{ timestamps: true });
-
-module.exports = mongoose.model("Transaction", transactionSchema);
+module.exports = mongoose.model('Transactions', transactionSchema);

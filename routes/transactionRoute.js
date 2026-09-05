@@ -1,19 +1,16 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const {
-  nameEnquiry,
-  transfer,
-  buyAirtime,
-  buyData,
-  getTransactionHistory
-} = require("../controller/transactionController");
-const { protect } = require("../middleware/auth");
-const { transactionLimiter } = require("../middleware/rateLimit");
+const transactionController = require('../controller/transactionController');
+const webhookController = require('../controller/WebhookController');
+const { protect } = require('../middleware/auth');
 
-router.post("/name-enquiry", protect, nameEnquiry);
-router.post("/send", protect, transactionLimiter, transfer);
-router.post("/airtime", protect, transactionLimiter, buyAirtime);
-router.post("/data", protect, transactionLimiter, buyData);
-router.get("/history", protect, getTransactionHistory);
+router.get('/name-enquiry/:accountNumber', protect, transactionController.nameEnquiry);
+router.post('/transfer', protect, transactionController.transferFunds);
+router.post('/buy-airtime', protect, transactionController.buyAirtime);
+router.post('/buy-data', protect, transactionController.buyData);
+router.get('/status/:transactionId', protect, transactionController.getTransactionStatus);
+router.get('/history', protect, transactionController.getUserTransactionHistory);
+
+router.post('/webhook', webhookController.handleNibssWebhook);
 
 module.exports = router;
