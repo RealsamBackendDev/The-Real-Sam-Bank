@@ -9,11 +9,9 @@ const nibssClient = axios.create({
   }
 });
 
-// Interceptor to attach NIBSS Bearer token automatically
 nibssClient.interceptors.request.use(
   async (config) => {
-    // Skip token injection for unauthenticated onboarding and auth endpoints
-    if (!config.url.includes('/onboard') && !config.url.includes('/auth/token')) {
+    if (!config.url.includes('/fintech/onboard') && !config.url.includes('/auth/token')) {
       const token = await getValidNibssToken();
       config.headers.Authorization = `Bearer ${token}`;
     }

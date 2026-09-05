@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const transactionController = require('../controller/transactionController');
 const webhookController = require('../controller/WebhookController');
-const { protect } = require('../middleware/auth');
+const protect = require('../middleware/auth');
 
 router.get('/name-enquiry/:accountNumber', protect, transactionController.nameEnquiry);
 router.post('/transfer', protect, transactionController.transferFunds);

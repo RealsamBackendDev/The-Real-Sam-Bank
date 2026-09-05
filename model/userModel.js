@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    middle_name: {
+      type: String,
+      trim: true,
+      default: null
+    },
     last_name: {
       type: String,
       required: true,
@@ -28,6 +33,10 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true
+    },
+    transactionPin: {
+      type: String,
+      default: null
     },
     isVerified: {
       type: Boolean,

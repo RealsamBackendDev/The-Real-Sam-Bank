@@ -1,5 +1,6 @@
 const nibssService = require('../Services/nibssServices');
 
+// 1. Register Fintech Institution on NIBSS (No Token Required)
 exports.onboardFintech = async (req, res) => {
   try {
     const { name, email } = req.body;
@@ -8,7 +9,7 @@ exports.onboardFintech = async (req, res) => {
       return res.status(400).json({ message: "Fintech name and email are required" });
     }
 
-    // Attempt request to /fintech/onboard
+   
     const response = await nibssService.post('/fintech/onboard', { name, email });
 
     res.status(201).json({
@@ -16,16 +17,13 @@ exports.onboardFintech = async (req, res) => {
       data: response.data
     });
   } catch (error) {
-    console.error("NIBSS Target URL:", error.config?.baseURL + error.config?.url);
-    console.error("NIBSS Error Response:", error.response?.data);
-
     const status = error.response?.status || 500;
     const message = error.response?.data?.message || error.message;
     res.status(status).json({ message: "Fintech onboarding failed", error: message });
   }
 };
 
-// 2. Authenticate Fintech & Obtain NIBSS JWT Access Token
+
 exports.getFintechToken = async (req, res) => {
   try {
     const { apiKey, apiSecret } = req.body;

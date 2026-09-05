@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const identityController = require('../controller/IdentityController');
-const { protect } = require('../middleware/auth');
+const protect = require('../middleware/auth');
 
 router.post('/insertBvn', protect, identityController.createBvn);
 router.post('/insertNin', protect, identityController.createNin);

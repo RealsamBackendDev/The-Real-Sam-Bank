@@ -1,53 +1,141 @@
-const Account = require('../Model/accountModel');
-const nibssService = require('../Services/nibssServices');
-
+const User = require('../model/userModel');
 
 exports.createNewAccount = async (req, res) => {
   try {
-    const { kycType, kycID, dob } = req.body;
+    const { accountNumber, bankName } = req.body;
     const userId = req.user.id;
 
-    if (!kycType || !kycID || !dob) {
-      return res.status(400).json({ message: "kycType, kycID, and dob are required" });
+    if (!accountNumber) {
+      return res.status(400).json({ message: "Account number is required" });
     }
 
-  
-    const existingAccount = await Account.findOne({ user: userId });
-    if (existingAccount) {
-      return res.status(400).json({ message: "Customer already has an existing account" });
-    }
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { accountNumber, bankName: bankName || 'Sam Bank', balance: 0.00, accountStatus: 'active' },
+      { new: true }
+    ).select('-password -transactionPin -otp');
 
-    const nibssResponse = await nibssService.post('/account/create', { kycType, kycID, dob });
-    const { accountNumber, bankCode, bankName, balance } = nibssResponse.data;
-
-    const newAccount = new Account({
-      user: userId,
-      account_number: accountNumber,
-      bankCode,
-      bankName,
-      kycType,
-      kycID,
-      balance: balance || 15000
-    });
-
-    await newAccount.save();
-    res.status(201).json({ message: "Account created successfully", account: newAccount });
+    res.status(201).json({ message: "Account created successfully", account: updatedUser });
   } catch (error) {
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.message || error.message;
-    res.status(status).json({ message: "Error creating account", error: message });
+    res.status(500).json({ message: "Error creating account", error: error.message });
   }
 };
 
-// Get account balance
 exports.getAccountBalance = async (req, res) => {
   try {
     const { accountNumber } = req.params;
-    const account = await Account.findOne({ account_number: accountNumber, user: req.user.id });
-    if (!account) return res.status(404).json({ message: "Account not found or access denied" });
+    const user = await User.findOne({ accountNumber }).select('accountNumber bankName balance accountStatus first_name last_name');
 
-    res.status(200).json({ accountNumber: account.account_number, balance: account.balance });
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.status(200).json({
+      message: "Balance retrieved successfully",
+      data: {
+        accountNumber: user.accountNumber,
+        bankName: user.bankName,
+        balance: user.balance,
+        status: user.accountStatus,
+        accountName: `${user.first_name} ${user.last_name}`
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: "Error fetching balance", error: error.message });
+  }
+};
+
+exports.getAllAccounts = async (req, res) => {
+  try {
+    const accounts = await User.find({ accountNumber: { $exists: true, $ne: null } })
+      .select('first_name middle_name last_name email phone accountNumber bankName balance accountStatus createdAt');
+
+    res.status(200).json({ message: "Accounts retrieved successfully", count: accounts.length, accounts });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving accounts", error: error.message });
+  }
+};
+
+exports.getAccountByIdentifier = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+
+    const user = await User.findOne({
+      $or: [
+        { accountNumber: identifier },
+        { phone: identifier },
+        { email: identifier }
+      ]
+    }).select('first_name middle_name last_name email phone accountNumber bankName balance accountStatus createdAt');
+
+    if (!user) {
+      return res.status(404).json({ message: "Account not found with provided identifier" });
+    }
+
+    res.status(200).json({ message: "Account details retrieved successfully", account: user });
+  } catch (error) {
+    res.status(500).json({ message: "Error searching account", error: error.message });
+  }
+};
+
+exports.updateAccountDetails = async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+    const { first_name, middle_name, last_name, phone } = req.body;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { accountNumber },
+      { $set: { first_name, middle_name, last_name, phone } },
+      { new: true, runValidators: true }
+    ).select('first_name middle_name last_name email phone accountNumber bankName accountStatus');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.status(200).json({ message: "Account updated successfully", account: updatedUser });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating account", error: error.message });
+  }
+};
+
+exports.setAccountStatus = async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'dormant', 'suspended', 'closed'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value. Allowed: active, dormant, suspended, closed" });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { accountNumber },
+      { $set: { accountStatus: status } },
+      { new: true }
+    ).select('accountNumber first_name last_name accountStatus');
+
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.status(200).json({ message: `Account status updated to ${status}`, account: user });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating account status", error: error.message });
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+
+    const deletedUser = await User.findOneAndDelete({ accountNumber });
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting account", error: error.message });
   }
 };
