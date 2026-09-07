@@ -6,9 +6,9 @@ const accountSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true 
+      unique: true
     },
-    account_number: {
+    accountNumber: {
       type: String,
       required: true,
       unique: true,
@@ -24,21 +24,28 @@ const accountSchema = new mongoose.Schema(
     },
     kycType: {
       type: String,
-      enum: ['BVN', 'NIN'],
+      enum: ['bvn', 'nin'],
       required: true
     },
     kycID: {
       type: String,
       required: true
     },
+    dob: {
+      type: String,
+      required: true
+    },
     balance: {
       type: Number,
-      default: 15000 
+      default: 15000
+    },
+    accountStatus: {
+      type: String,
+      enum: ['active', 'dormant', 'suspended', 'closed'],
+      default: 'active'
     }
   },
   { timestamps: true }
 );
 
-
-// USE THIS INSTEAD:
 module.exports = mongoose.models.Account || mongoose.model('Account', accountSchema);
