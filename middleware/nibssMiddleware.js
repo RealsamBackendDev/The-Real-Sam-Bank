@@ -1,28 +1,31 @@
+ 
 const axios = require('axios');
+const nibssConfig = require('../config/nibssConfig');
 
-let cachedNibssToken = null;
-let tokenExpiresAt = null;
+const getValidNibssToken = async (forceRefresh = false) => {
+  const now = Date.now();
 
-const getValidNibssToken = async () => {
-  const now = new Date();
-  
-  // Return cached token if still valid (with 1-minute buffer)
-  if (cachedNibssToken && tokenExpiresAt && now < tokenExpiresAt) {
-    return cachedNibssToken;
+  if (!forceRefresh && nibssConfig.token && nibssConfig.tokenExpiresAt && now < nibssConfig.tokenExpiresAt - 60000) {
+    return nibssConfig.token;
+  }
+
+  const apiKey = nibssConfig.apiKey || process.env.NIBSS_API_KEY;
+  const apiSecret = nibssConfig.apiSecret || process.env.NIBSS_API_SECRET;
+
+  if (!apiKey || !apiSecret) {
+    throw new Error('NIBSS API credentials not configured. Onboard your fintech first.');
   }
 
   try {
-    const baseURL = process.env.NIBSS_BASE_URL || 'https://nibssbyphoenix.onrender.com/api';
-    const response = await axios.post(`${baseURL}/auth/token`, {
-      apiKey: process.env.NIBSS_API_KEY,
-      apiSecret: process.env.NIBSS_API_SECRET
+    const response = await axios.post(`${nibssConfig.baseURL}/auth/token`, {
+      apiKey,
+      apiSecret
     });
 
-    cachedNibssToken = response.data.token;
-  
-    tokenExpiresAt = new Date(now.getTime() + 55 * 60 * 1000);
+    nibssConfig.token = response.data.token;
+    nibssConfig.tokenExpiresAt = now + 3300000;
 
-    return cachedNibssToken;
+    return nibssConfig.token;
   } catch (error) {
     throw new Error('Failed to obtain NIBSS access token: ' + (error.response?.data?.message || error.message));
   }
